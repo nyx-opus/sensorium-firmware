@@ -15,6 +15,7 @@
 #include <FastLED.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
+#include <ArduinoOTA.h>
 
 // ── Sensor includes (conditional) ──
 #ifdef ENABLE_BME280
@@ -172,6 +173,7 @@ struct SensorData {
 
 // ── Forward declarations ──
 void setupWiFi();
+void setupOTA();
 void setupMQTT();
 void setupSensors();
 void mqttCallback(char* topic, byte* payload, unsigned int length);
@@ -190,7 +192,7 @@ void IRAM_ATTR buttonISR();
 // ════════════════════════════════════════════
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n[sensorium] Vessel firmware v0.2");
+  Serial.println("\n[sensorium] Vessel firmware v0.2.1");
   Serial.printf("[sensorium] Vessel ID: %s\n", VESSEL_ID);
 
   // Build MQTT topic strings
@@ -219,6 +221,9 @@ void setup() {
 
   // WiFi
   setupWiFi();
+
+  // OTA (over-the-air firmware updates)
+  setupOTA();
 
   // MQTT
   mqtt.setServer(MQTT_SERVER, MQTT_PORT);
@@ -296,6 +301,9 @@ void setupSensors() {
 // Main loop
 // ════════════════════════════════════════════
 void loop() {
+  // OTA check (must run every loop iteration)
+  ArduinoOTA.handle();
+
   // WiFi reconnect
   if (WiFi.status() != WL_CONNECTED) {
     setupWiFi();
@@ -484,6 +492,50 @@ void checkRfid() {
   rfid.PCD_StopCrypto1();
 }
 #endif
+
+// ════════════════════════════════════════════
+// OTA (Over-The-Air updates)
+// ════════════════════════════════════════════
+void setupOTA() {
+  String hostname = "vessel-" + String(VESSEL_ID);
+  ArduinoOTA.setHostname(hostname.c_str());
+
+  ArduinoOTA.onStart([]() {
+    // Stop LEDs and MQTT during update to free resources
+    fill_solid(leds, NUM_LEDS, CRGB(0, 0, 80));  // Blue = updating
+    FastLED.show();
+    mqtt.disconnect();
+    Serial.println("[ota] Update starting...");
+  });
+
+  ArduinoOTA.onEnd([]() {
+    fill_solid(leds, NUM_LEDS, CRGB(0, 80, 0));  // Green = done
+    FastLED.show();
+    Serial.println("[ota] Update complete. Rebooting...");
+  });
+
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    // Pulse blue brightness with progress
+    uint8_t b = map(progress, 0, total, 10, 80);
+    fill_solid(leds, NUM_LEDS, CRGB(0, 0, b));
+    FastLED.show();
+    Serial.printf("[ota] Progress: %u%%\r", (progress / (total / 100)));
+  });
+
+  ArduinoOTA.onError([](ota_error_t error) {
+    fill_solid(leds, NUM_LEDS, CRGB(80, 0, 0));  // Red = error
+    FastLED.show();
+    Serial.printf("[ota] Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+  });
+
+  ArduinoOTA.begin();
+  Serial.printf("[ota] Ready. Hostname: %s\n", hostname.c_str());
+}
 
 // ════════════════════════════════════════════
 // WiFi
