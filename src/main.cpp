@@ -23,9 +23,21 @@
   #include <Adafruit_BME280.h>
 #endif
 
+#ifdef ENABLE_BH1750
+  #ifndef ENABLE_BME280
+    #include <Wire.h>  // I2C needed for BH1750
+  #endif
+  #include <BH1750.h>
+#endif
+
 #ifdef ENABLE_DS18B20
   #include <OneWire.h>
   #include <DallasTemperature.h>
+#endif
+
+#ifdef ENABLE_BH1750
+  BH1750 lightMeter;
+  bool bh1750Ready = false;
 #endif
 
 #ifdef ENABLE_RFID
@@ -47,9 +59,6 @@
 // Sensor pins (defaults, override in platformio.ini)
 #ifndef DS18B20_PIN
   #define DS18B20_PIN 4
-#endif
-#ifndef LDR_PIN
-  #define LDR_PIN 34  // ADC1, analog input
 #endif
 #ifndef BATTERY_PIN
   #define BATTERY_PIN 35  // ADC1, analog input
@@ -133,6 +142,9 @@ const unsigned long SENSOR_INTERVAL_MS = 10000;  // 10 seconds
   bool ds18b20Ready = false;
 #endif
 
+#ifdef ENABLE_BH1750
+#endif
+
 #ifdef ENABLE_RFID
   MFRC522 rfid(RFID_SS_PIN, RFID_RST_PIN);
   unsigned long lastRfidScan = 0;
@@ -150,9 +162,8 @@ struct SensorData {
   float bodyTemp = 0;
   // ESP32 internal
   float chipTemp = 0;
-  // Light (LDR)
-  int lightLevel = 0;      // Raw ADC 0-4095
-  float lightPercent = 0;   // 0-100%
+  // Light (BH1750)
+  float lightLux = 0;       // Lux reading
   // Battery
   int batteryRaw = 0;       // Raw ADC 0-4095
   float batteryVoltage = 0; // Actual battery voltage after divider correction
@@ -249,9 +260,13 @@ void setupSensors() {
     }
   #endif
 
-  #ifdef ENABLE_LDR
-    pinMode(LDR_PIN, INPUT);
-    Serial.println("[sensor] LDR ready (light)");
+  #ifdef ENABLE_BH1750
+    if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)) {
+      bh1750Ready = true;
+      Serial.println("[sensor] BH1750 ready (light)");
+    } else {
+      Serial.println("[sensor] BH1750 not found — skipping");
+    }
   #endif
 
   #ifdef ENABLE_BATTERY
@@ -261,7 +276,10 @@ void setupSensors() {
     Serial.println("[sensor] Battery ADC ready");
   #endif
 
-  #ifdef ENABLE_RFID
+  #ifdef ENABLE_BH1750
+#endif
+
+#ifdef ENABLE_RFID
     SPI.begin();
     rfid.PCD_Init();
     delay(10);
@@ -304,7 +322,10 @@ void loop() {
   }
 
   // Check RFID continuously (fast, non-blocking)
-  #ifdef ENABLE_RFID
+  #ifdef ENABLE_BH1750
+#endif
+
+#ifdef ENABLE_RFID
     checkRfid();
   #endif
 
@@ -340,9 +361,10 @@ void readSensors() {
     }
   #endif
 
-  #ifdef ENABLE_LDR
-    sensors.lightLevel = analogRead(LDR_PIN);
-    sensors.lightPercent = (sensors.lightLevel / 4095.0) * 100.0;
+  #ifdef ENABLE_BH1750
+    if (bh1750Ready) {
+      sensors.lightLux = lightMeter.readLightLevel();
+    }
   #endif
 
   #ifdef ENABLE_BATTERY
@@ -390,10 +412,11 @@ void publishSensors() {
     }
   #endif
 
-  #ifdef ENABLE_LDR
-    pos += snprintf(json + pos, sizeof(json) - pos,
-      ",\"light\":%d,\"light_pct\":%.1f",
-      sensors.lightLevel, sensors.lightPercent);
+  #ifdef ENABLE_BH1750
+    if (bh1750Ready) {
+      pos += snprintf(json + pos, sizeof(json) - pos,
+        ",\"light_lux\":%.1f", sensors.lightLux);
+    }
   #endif
 
   #ifdef ENABLE_BATTERY
@@ -411,6 +434,9 @@ void publishSensors() {
 // ════════════════════════════════════════════
 // RFID
 // ════════════════════════════════════════════
+#ifdef ENABLE_BH1750
+#endif
+
 #ifdef ENABLE_RFID
 void checkRfid() {
   // Non-blocking: just check if a card is present
