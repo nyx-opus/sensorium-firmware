@@ -1,0 +1,21 @@
+.pio/build/wroom/libb6c/FastLED/fl/crgb_hsv16.cpp.o: \
+ .pio/libdeps/wroom/FastLED/src/fl/crgb_hsv16.cpp \
+ .pio/libdeps/wroom/FastLED/src/crgb.h \
+ .pio/libdeps/wroom/FastLED/src/fl/stdint.h \
+ .pio/libdeps/wroom/FastLED/src/fl/int.h \
+ .pio/libdeps/wroom/FastLED/src/platforms/int.h \
+ .pio/libdeps/wroom/FastLED/src/platforms/arm/is_arm.h \
+ .pio/libdeps/wroom/FastLED/src/platforms/esp/int.h \
+ .pio/libdeps/wroom/FastLED/src/chsv.h \
+ .pio/libdeps/wroom/FastLED/src/fl/hsv.h \
+ .pio/libdeps/wroom/FastLED/src/fl/namespace.h \
+ .pio/libdeps/wroom/FastLED/src/color.h \
+ .pio/libdeps/wroom/FastLED/src/lib8tion/types.h \
+ .pio/libdeps/wroom/FastLED/src/fl/force_inline.h \
+ .pio/libdeps/wroom/FastLED/src/fl/type_traits.h \
+ .pio/libdeps/wroom/FastLED/src/fl/move.h \
+ .pio/libdeps/wroom/FastLED/src/hsv2rgb.h \
+ .pio/libdeps/wroom/FastLED/src/fl/ease.h \
+ .pio/libdeps/wroom/FastLED/src/fastled_progmem.h \
+ .pio/libdeps/wroom/FastLED/src/platforms/null_progmem.h \
+ .pio/libdeps/wroom/FastLED/src/fl/hsv16.h

@@ -1,0 +1,34 @@
+.pio/build/wroom/libb6c/FastLED/fl/allocator.cpp.o: \
+ .pio/libdeps/wroom/FastLED/src/fl/allocator.cpp \
+ .pio/libdeps/wroom/FastLED/src/fl/allocator.h \
+ .pio/libdeps/wroom/FastLED/src/fl/inplacenew.h \
+ .pio/libdeps/wroom/FastLED/src/fl/stdint.h \
+ .pio/libdeps/wroom/FastLED/src/fl/int.h \
+ .pio/libdeps/wroom/FastLED/src/platforms/int.h \
+ .pio/libdeps/wroom/FastLED/src/platforms/arm/is_arm.h \
+ .pio/libdeps/wroom/FastLED/src/platforms/esp/int.h \
+ .pio/libdeps/wroom/FastLED/src/fl/memfill.h \
+ .pio/libdeps/wroom/FastLED/src/fl/type_traits.h \
+ .pio/libdeps/wroom/FastLED/src/fl/namespace.h \
+ .pio/libdeps/wroom/FastLED/src/fl/move.h \
+ .pio/libdeps/wroom/FastLED/src/fl/unused.h \
+ .pio/libdeps/wroom/FastLED/src/fl/bit_cast.h \
+ .pio/libdeps/wroom/FastLED/src/fl/bitset.h \
+ .pio/libdeps/wroom/FastLED/src/fl/bitset_dynamic.h \
+ .pio/libdeps/wroom/FastLED/src/fl/math_macros.h \
+ .pio/libdeps/wroom/FastLED/src/fl/has_include.h \
+ .pio/libdeps/wroom/FastLED/src/fl/compiler_control.h \
+ .pio/libdeps/wroom/FastLED/src/fl/variant.h \
+ .pio/libdeps/wroom/FastLED/src/fl/thread_local.h \
+ .pio/libdeps/wroom/FastLED/src/fl/thread.h \
+ /home/nyx/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/heap/include/esp_heap_caps.h \
+ /home/nyx/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/heap/include/multi_heap.h \
+ /home/nyx/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_common/include/esp_err.h \
+ /home/nyx/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_common/include/esp_compiler.h \
+ /home/nyx/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_system/include/esp_system.h \
+ /home/nyx/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_common/include/esp_attr.h \
+ /home/nyx/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_common/include/esp_bit_defs.h \
+ /home/nyx/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_common/include/esp_idf_version.h \
+ /home/nyx/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_hw_support/include/esp_mac.h \
+ /home/nyx/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_hw_support/include/esp_chip_info.h \
+ /home/nyx/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_hw_support/include/esp_random.h
