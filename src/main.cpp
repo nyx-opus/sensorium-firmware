@@ -768,7 +768,7 @@ void sendHeartbeat() {
 
   char json[256];
   snprintf(json, sizeof(json),
-    "{\"vessel\":\"%s\",\"uptime\":%lu,\"wifi_rssi\":%d,\"free_heap\":%u,\"led_mode\":\"%s\",\"fw_version\":\"0.2\"}",
+    "{\"vessel\":\"%s\",\"uptime\":%lu,\"wifi_rssi\":%d,\"free_heap\":%u,\"led_mode\":\"%s\",\"fw_version\":\"0.2.1\"}",
     VESSEL_ID,
     now / 1000,
     WiFi.RSSI(),
