@@ -68,7 +68,7 @@
   #define RFID_SS_PIN 5
 #endif
 #ifndef RFID_RST_PIN
-  #define RFID_RST_PIN 2
+  #define RFID_RST_PIN 15
 #endif
 #ifndef I2C_SDA_PIN
   #define I2C_SDA_PIN 21
@@ -204,6 +204,21 @@ void setup() {
   topicLedCmd  = base + "/led";
   topicCommand = base + "/command";
 
+  // RFID first — before FastLED, because FastLED's RMT driver on GPIO 13
+  // (which is also HSPI MOSI) can interfere with SPI initialisation.
+  #ifdef ENABLE_RFID
+    SPI.begin();
+    rfid.PCD_Init();
+    delay(10);
+    if (rfid.PCD_PerformSelfTest()) {
+      rfid.PCD_Init();  // Re-init after self-test
+      rfid.PCD_SetAntennaGain(rfid.RxGain_max);
+      Serial.println("[sensor] RC522 RFID ready");
+    } else {
+      Serial.println("[sensor] RC522 self-test failed — check wiring");
+    }
+  #endif
+
   // LEDs
   FastLED.addLeds<SK6812, LED_PIN, GRB>(leds, NUM_LEDS).setRgbw(RgbwDefault());
   FastLED.setBrightness(80);
@@ -216,7 +231,7 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), buttonISR, FALLING);
   Serial.println("[sensorium] Button ready");
 
-  // Sensors
+  // Sensors (I2C, OneWire, analog — no RFID, already done above)
   setupSensors();
 
   // WiFi
@@ -284,17 +299,7 @@ void setupSensors() {
   #ifdef ENABLE_BH1750
 #endif
 
-#ifdef ENABLE_RFID
-    SPI.begin();
-    rfid.PCD_Init();
-    delay(10);
-    if (rfid.PCD_PerformSelfTest()) {
-      rfid.PCD_Init();  // Re-init after self-test
-      Serial.println("[sensor] RC522 RFID ready");
-    } else {
-      Serial.println("[sensor] RC522 self-test failed — check wiring");
-    }
-  #endif
+  // RFID init moved to setup() — must happen before FastLED
 }
 
 // ════════════════════════════════════════════
@@ -318,8 +323,27 @@ void loop() {
   // Handle button press (from ISR flag)
   handleButton();
 
-  // Update LED animation
-  updateLEDs();
+  // RFID and FastLED cannot coexist in the same millisecond —
+  // FastLED's RMT interrupt handler corrupts SPI timing.
+  // Solution: once per second, skip LED updates and check RFID instead.
+  // LEDs hold their last state (SK6812s latch). The pause is invisible.
+  #ifdef ENABLE_RFID
+    static unsigned long lastRfidWindow = 0;
+    unsigned long now_loop = millis();
+    bool inRfidWindow = (now_loop - lastRfidWindow) < 50;  // 50ms window
+
+    if (now_loop - lastRfidWindow >= 1000) {
+      lastRfidWindow = now_loop;  // Open a new RFID window
+    }
+
+    if (inRfidWindow) {
+      checkRfid();  // No LED updates during this window
+    } else {
+      updateLEDs();
+    }
+  #else
+    updateLEDs();
+  #endif
 
   // Read and publish sensors periodically
   unsigned long now = millis();
