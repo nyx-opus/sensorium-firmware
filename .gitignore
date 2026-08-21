@@ -1,1 +1,5 @@
 .pio/
+credentials.ini
+
+src/credentials.h
+credentials.ini

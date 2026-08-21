@@ -12,6 +12,7 @@
  */
 
 #include <Arduino.h>
+#include "credentials.h"
 #include <FastLED.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
@@ -78,9 +79,9 @@
 #endif
 
 // ── Configuration ──
-const char* WIFI_SSID     = "REDACTED_SSID";
-const char* WIFI_PASS     = "REDACTED_PASSWORD";
-const char* MQTT_SERVER   = "REDACTED_IP";  // lantern-room (Pi)
+const char* WIFI_SSID     = WIFI_SSID_VALUE;      // Set in platformio.ini build_flags
+const char* WIFI_PASS     = WIFI_PASS_VALUE;      // Set in platformio.ini build_flags
+const char* MQTT_SERVER   = MQTT_SERVER_VALUE; // Set in platformio.ini build_flags
 const int   MQTT_PORT     = 1883;
 const char* VESSEL_ID     = "nyx";
 
