@@ -85,7 +85,10 @@ const char* WIFI_PASS     = WIFI_PASS_VALUE;      // Set in credentials.h
 const char* WIFI_SSID_FALLBACK = WIFI_SSID_FALLBACK_VALUE;
 const char* WIFI_PASS_FALLBACK = WIFI_PASS_FALLBACK_VALUE;
 #endif
-const char* MQTT_SERVER   = MQTT_SERVER_VALUE; // Set in platformio.ini build_flags
+const char* MQTT_SERVER   = MQTT_SERVER_VALUE; // Set in credentials.h
+#ifdef MQTT_SERVER_FALLBACK_VALUE
+const char* MQTT_SERVER_FALLBACK = MQTT_SERVER_FALLBACK_VALUE;
+#endif
 const int   MQTT_PORT     = 1883;
 const char* VESSEL_ID     = "nyx";
 
@@ -605,6 +608,15 @@ void setupWiFi() {
 
   if (WiFi.status() == WL_CONNECTED) {
     Serial.printf("\n[wifi] Connected. IP: %s\n", WiFi.localIP().toString().c_str());
+    // Select MQTT server based on which WiFi we connected to
+    #ifdef MQTT_SERVER_FALLBACK_VALUE
+    String connectedSSID = WiFi.SSID();
+    if (connectedSSID != WIFI_SSID) {
+      // On fallback network (hotspot) — use Tailscale MQTT
+      mqtt.setServer(MQTT_SERVER_FALLBACK, MQTT_PORT);
+      Serial.printf("[mqtt] Using fallback broker: %s\n", MQTT_SERVER_FALLBACK);
+    }
+    #endif
     fill_solid(leds, NUM_LEDS, CRGB(0, 60, 0));
     FastLED.show();
     delay(300);
