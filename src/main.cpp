@@ -79,8 +79,12 @@
 #endif
 
 // ── Configuration ──
-const char* WIFI_SSID     = WIFI_SSID_VALUE;      // Set in platformio.ini build_flags
-const char* WIFI_PASS     = WIFI_PASS_VALUE;      // Set in platformio.ini build_flags
+const char* WIFI_SSID     = WIFI_SSID_VALUE;      // Set in credentials.h
+const char* WIFI_PASS     = WIFI_PASS_VALUE;      // Set in credentials.h
+#ifdef WIFI_SSID_FALLBACK_VALUE
+const char* WIFI_SSID_FALLBACK = WIFI_SSID_FALLBACK_VALUE;
+const char* WIFI_PASS_FALLBACK = WIFI_PASS_FALLBACK_VALUE;
+#endif
 const char* MQTT_SERVER   = MQTT_SERVER_VALUE; // Set in platformio.ini build_flags
 const int   MQTT_PORT     = 1883;
 const char* VESSEL_ID     = "nyx";
@@ -566,12 +570,14 @@ void setupOTA() {
 // WiFi
 // ════════════════════════════════════════════
 void setupWiFi() {
-  Serial.printf("[wifi] Connecting to %s", WIFI_SSID);
   WiFi.mode(WIFI_STA);
+
+  // Try primary network first
+  Serial.printf("[wifi] Connecting to %s", WIFI_SSID);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
 
   int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 40) {
+  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
     delay(500);
     Serial.print(".");
     attempts++;
@@ -579,6 +585,23 @@ void setupWiFi() {
     fill_solid(leds, NUM_LEDS, CRGB(b, b/3, 0));
     FastLED.show();
   }
+
+  // If primary fails, try fallback (e.g. phone hotspot)
+  #ifdef WIFI_SSID_FALLBACK_VALUE
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.printf("\n[wifi] Primary failed. Trying fallback: %s", WIFI_SSID_FALLBACK);
+    WiFi.begin(WIFI_SSID_FALLBACK, WIFI_PASS_FALLBACK);
+    attempts = 0;
+    while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+      delay(500);
+      Serial.print(".");
+      attempts++;
+      uint8_t b = (attempts * 6) % 255;
+      fill_solid(leds, NUM_LEDS, CRGB(0, b/3, b));
+      FastLED.show();
+    }
+  }
+  #endif
 
   if (WiFi.status() == WL_CONNECTED) {
     Serial.printf("\n[wifi] Connected. IP: %s\n", WiFi.localIP().toString().c_str());
