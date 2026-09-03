@@ -46,6 +46,9 @@
   #include <SPI.h>
   #include <MFRC522.h>
 #endif
+#ifdef ENABLE_NFC_I2C
+  #include <Adafruit_PN532.h>
+#endif
 
 // ── Pin assignments (set in platformio.ini build_flags) ──
 #ifndef LED_PIN
@@ -154,11 +157,17 @@ const unsigned long SENSOR_INTERVAL_MS = 10000;  // 10 seconds
 #ifdef ENABLE_BH1750
 #endif
 
+#if defined(ENABLE_RFID) || defined(ENABLE_NFC_I2C)
+  unsigned long lastRfidScan = 0;
+  const unsigned long RFID_COOLDOWN_MS = 2000;
+  String lastTagUid = "";
+#endif
 #ifdef ENABLE_RFID
   MFRC522 rfid(RFID_SS_PIN, RFID_RST_PIN);
-  unsigned long lastRfidScan = 0;
-  const unsigned long RFID_COOLDOWN_MS = 2000;  // Don't re-read same tag for 2s
-  String lastTagUid = "";
+#endif
+#ifdef ENABLE_NFC_I2C
+  // IRQ and RESET not wired — polling mode
+  Adafruit_PN532 nfc(-1, -1);
 #endif
 
 // ── Sensor readings (latest values) ──
@@ -308,6 +317,20 @@ void setupSensors() {
 #endif
 
   // RFID init moved to setup() — must happen before FastLED
+  #ifdef ENABLE_NFC_I2C
+    nfc.begin();
+    uint32_t versiondata = nfc.getFirmwareVersion();
+    if (versiondata) {
+      uint8_t major = (versiondata >> 24) & 0xFF;
+      uint8_t minor = (versiondata >> 16) & 0xFF;
+      Serial.printf("[sensor] PN532 NFC ready (firmware v%d.%d)\n", major, minor);
+      // Configure for ISO14443A tags (MIFARE, NTAG)
+      nfc.SAMConfig();
+      nfc.setPassiveActivationRetries(1);  // Don't block — one try per check
+    } else {
+      Serial.println("[sensor] PN532 not found — check wiring");
+    }
+  #endif
 }
 
 // ════════════════════════════════════════════
@@ -522,6 +545,57 @@ void checkRfid() {
 
   rfid.PICC_HaltA();
   rfid.PCD_StopCrypto1();
+}
+#endif
+
+#ifdef ENABLE_NFC_I2C
+void checkNfc() {
+  // Non-blocking: try to read a tag, return immediately if none present
+  static unsigned long lastNfcCheck = 0;
+  unsigned long now = millis();
+  if (now - lastNfcCheck < 1000) return;  // Check once per second
+  lastNfcCheck = now;
+
+  uint8_t uid[7];
+  uint8_t uidLength;
+
+  if (!nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength, 50)) {
+    return;  // No tag present
+  }
+
+  // Build UID string
+  String uidStr = "";
+  for (uint8_t i = 0; i < uidLength; i++) {
+    if (i > 0) uidStr += ":";
+    if (uid[i] < 0x10) uidStr += "0";
+    uidStr += String(uid[i], HEX);
+  }
+  uidStr.toUpperCase();
+
+  // Cooldown: don't re-publish the same tag within 2 seconds
+  static String lastTagUid = "";
+  static unsigned long lastNfcScan = 0;
+  if (uidStr == lastTagUid && (now - lastNfcScan) < 2000) return;
+
+  lastTagUid = uidStr;
+  lastNfcScan = now;
+
+  Serial.printf("[nfc] Tag: %s (I2C)\n", uidStr.c_str());
+
+  // Publish tag UID
+  if (mqtt.connected()) {
+    char json[128];
+    snprintf(json, sizeof(json), "{\"uid\":\"%s\",\"vessel\":\"%s\"}", uidStr.c_str(), VESSEL_ID);
+    mqtt.publish(topicRfid.c_str(), json);
+    Serial.println("[mqtt] Published NFC tag");
+  }
+
+  // Visual feedback: blue pulse
+  fill_solid(leds, NUM_LEDS, CRGB(0, 0, 180));
+  FastLED.setBrightness(120);
+  FastLED.show();
+  delay(200);
+  FastLED.setBrightness(80);
 }
 #endif
 
