@@ -157,6 +157,10 @@ const unsigned long SENSOR_INTERVAL_MS = 10000;  // 10 seconds
 #ifdef ENABLE_BH1750
 #endif
 
+#ifdef ENABLE_ACCEL
+  bool accelReady = false;
+#endif
+
 #if defined(ENABLE_RFID) || defined(ENABLE_NFC_I2C)
   unsigned long lastRfidScan = 0;
   const unsigned long RFID_COOLDOWN_MS = 2000;
@@ -303,6 +307,18 @@ void setupSensors() {
       Serial.println("[sensor] BH1750 ready (light)");
     } else {
       Serial.println("[sensor] BH1750 not found — skipping");
+    }
+  #endif
+
+  #ifdef ENABLE_ACCEL
+    Wire.beginTransmission(0x68);
+    Wire.write(0x6B);
+    Wire.write(0x00);
+    if (Wire.endTransmission() == 0) {
+      accelReady = true;
+      Serial.println("[sensor] MPU6050 ready (accel)");
+    } else {
+      Serial.println("[sensor] MPU6050 not found — skipping");
     }
   #endif
 
