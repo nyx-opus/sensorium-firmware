@@ -93,7 +93,7 @@ const char* MQTT_SERVER   = MQTT_SERVER_VALUE; // Set in credentials.h
 const char* MQTT_SERVER_FALLBACK = MQTT_SERVER_FALLBACK_VALUE;
 #endif
 const int   MQTT_PORT     = 1883;
-const char* VESSEL_ID     = "nyx";
+const char* VESSEL_ID     = VESSEL_ID_VALUE;
 
 // ── MQTT Topics ──
 // Publish:  vessel/{id}/button    → "pressed"
