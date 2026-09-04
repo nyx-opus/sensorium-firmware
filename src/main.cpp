@@ -318,6 +318,7 @@ void setupSensors() {
 
   // RFID init moved to setup() — must happen before FastLED
   #ifdef ENABLE_NFC_I2C
+    Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);  // Set I2C pins before PN532 init
     nfc.begin();
     uint32_t versiondata = nfc.getFirmwareVersion();
     if (versiondata) {
