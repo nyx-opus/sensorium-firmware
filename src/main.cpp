@@ -267,6 +267,11 @@ void setup() {
   mqtt.setBufferSize(1024);  // Larger buffer for sensor JSON
 
   Serial.println("[sensorium] Setup complete. Breathing.");
+
+  // Publish sensor init status via MQTT once connected
+  #ifdef ENABLE_ACCEL
+    Serial.printf("[debug] accelReady = %s\n", accelReady ? "true" : "false");
+  #endif
 }
 
 // ════════════════════════════════════════════
