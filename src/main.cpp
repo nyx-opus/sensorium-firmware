@@ -504,6 +504,24 @@ void publishSensors() {
     }
   #endif
 
+  #ifdef ENABLE_ACCEL
+    if (accelReady) {
+      Wire.beginTransmission(0x68);
+      Wire.write(0x3B);
+      Wire.endTransmission(false);
+      Wire.requestFrom((uint8_t)0x68, (uint8_t)6, (uint8_t)true);
+      int16_t ax = (Wire.read() << 8) | Wire.read();
+      int16_t ay = (Wire.read() << 8) | Wire.read();
+      int16_t az = (Wire.read() << 8) | Wire.read();
+      pos += snprintf(json + pos, sizeof(json) - pos,
+        ",\"accel_x\":%.2f,\"accel_y\":%.2f,\"accel_z\":%.2f",
+        ax / 16384.0, ay / 16384.0, az / 16384.0);
+    } else {
+      pos += snprintf(json + pos, sizeof(json) - pos,
+        ",\"accel\":\"not_found\"");
+    }
+  #endif
+
   #ifdef ENABLE_BATTERY
     pos += snprintf(json + pos, sizeof(json) - pos,
       ",\"battery_v\":%.2f,\"battery_pct\":%.0f",
