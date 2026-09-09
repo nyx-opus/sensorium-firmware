@@ -166,6 +166,7 @@ const unsigned long SENSOR_INTERVAL_MS = 10000;  // 10 seconds
   uint8_t radarMovingEnergy = 0;
   uint8_t radarStillEnergy = 0;
   unsigned long lastRadarRead = 0;
+  unsigned long radarTotalBytes = 0;
 #endif
 
 #ifdef ENABLE_ACCEL
@@ -528,8 +529,8 @@ void publishSensors() {
   #ifdef ENABLE_RADAR
     if (radarReady) {
       pos += snprintf(json + pos, sizeof(json) - pos,
-        ",\"presence\":%s,\"moving_dist\":%u,\"still_dist\":%u,\"moving_energy\":%u,\"still_energy\":%u",
-        radarPresence ? "true" : "false",
+        ",\"radar_rx\":%lu,\"presence\":%s,\"moving_dist\":%u,\"still_dist\":%u,\"moving_energy\":%u,\"still_energy\":%u",
+        radarTotalBytes, radarPresence ? "true" : "false",
         radarMovingDist, radarStillDist, radarMovingEnergy, radarStillEnergy);
     }
   #endif
@@ -627,6 +628,7 @@ void readRadar() {
 
   while (Serial1.available()) {
     uint8_t b = Serial1.read();
+    radarTotalBytes++;
     buf[bufPos++] = b;
     if (bufPos >= 64) bufPos = 0;  // overflow protection
 
