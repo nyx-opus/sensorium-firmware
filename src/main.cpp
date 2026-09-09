@@ -344,7 +344,7 @@ void setupSensors() {
     #ifndef RADAR_RX_PIN
       #define RADAR_RX_PIN 2  // D7 on XIAO
     #endif
-    Serial2.begin(256000, SERIAL_8N1, RADAR_RX_PIN, -1);  // RX only, no TX needed
+    Serial2.begin(115200, SERIAL_8N1, RADAR_RX_PIN, -1);  // RX only, no TX needed
     radarReady = true;
     Serial.println("[sensor] LD2410B radar ready (UART)");
   #endif
