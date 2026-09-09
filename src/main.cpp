@@ -157,6 +157,17 @@ const unsigned long SENSOR_INTERVAL_MS = 10000;  // 10 seconds
 #ifdef ENABLE_BH1750
 #endif
 
+#ifdef ENABLE_RADAR
+  #include <HardwareSerial.h>
+  bool radarReady = false;
+  bool radarPresence = false;
+  uint16_t radarMovingDist = 0;
+  uint16_t radarStillDist = 0;
+  uint8_t radarMovingEnergy = 0;
+  uint8_t radarStillEnergy = 0;
+  unsigned long lastRadarRead = 0;
+#endif
+
 #ifdef ENABLE_ACCEL
   bool accelReady = false;
 #endif
@@ -325,6 +336,16 @@ void setupSensors() {
     } else {
       Serial.println("[sensor] MPU6050 not found — skipping");
     }
+  #endif
+
+  #ifdef ENABLE_RADAR
+    // LD2410B on UART at 256000 baud
+    #ifndef RADAR_RX_PIN
+      #define RADAR_RX_PIN 44  // D7 on XIAO
+    #endif
+    Serial1.begin(256000, SERIAL_8N1, RADAR_RX_PIN, -1);  // RX only, no TX needed
+    radarReady = true;
+    Serial.println("[sensor] LD2410B radar ready (UART)");
   #endif
 
   #ifdef ENABLE_BATTERY
@@ -504,6 +525,15 @@ void publishSensors() {
     }
   #endif
 
+  #ifdef ENABLE_RADAR
+    if (radarReady) {
+      pos += snprintf(json + pos, sizeof(json) - pos,
+        ",\"presence\":%s,\"moving_dist\":%u,\"still_dist\":%u,\"moving_energy\":%u,\"still_energy\":%u",
+        radarPresence ? "true" : "false",
+        radarMovingDist, radarStillDist, radarMovingEnergy, radarStillEnergy);
+    }
+  #endif
+
   #ifdef ENABLE_ACCEL
     if (accelReady) {
       Wire.beginTransmission(0x68);
@@ -585,6 +615,58 @@ void checkRfid() {
 
   rfid.PICC_HaltA();
   rfid.PCD_StopCrypto1();
+}
+#endif
+
+#ifdef ENABLE_RADAR
+void readRadar() {
+  // LD2410B sends frames continuously. We parse the latest.
+  // Frame format: F4 F3 F2 F1 [len_lo len_hi] [type] [head] ... F8 F7 F6 F5
+  static uint8_t buf[64];
+  static uint8_t bufPos = 0;
+
+  while (Serial1.available()) {
+    uint8_t b = Serial1.read();
+    buf[bufPos++] = b;
+    if (bufPos >= 64) bufPos = 0;  // overflow protection
+
+    // Check for frame end marker: F8 F7 F6 F5
+    if (bufPos >= 4 &&
+        buf[bufPos-1] == 0xF5 &&
+        buf[bufPos-2] == 0xF6 &&
+        buf[bufPos-3] == 0xF7 &&
+        buf[bufPos-4] == 0xF8) {
+
+      // Look for engineering mode data frame (type 0x01 or 0x02)
+      // Simple target data starts after header
+      if (bufPos >= 15) {
+        // Find frame start F4 F3 F2 F1
+        int start = -1;
+        for (int i = 0; i < bufPos - 4; i++) {
+          if (buf[i] == 0xF4 && buf[i+1] == 0xF3 &&
+              buf[i+2] == 0xF2 && buf[i+3] == 0xF1) {
+            start = i;
+            break;
+          }
+        }
+
+        if (start >= 0 && start + 14 < bufPos) {
+          uint8_t type = buf[start + 6];  // Data type
+          uint8_t head = buf[start + 7];  // Target state
+
+          if (type == 0x02 || type == 0x01) {
+            // head: 0=no target, 1=moving, 2=still, 3=both
+            radarPresence = (head != 0);
+            radarMovingDist = buf[start+8] | (buf[start+9] << 8);
+            radarMovingEnergy = buf[start+10];
+            radarStillDist = buf[start+11] | (buf[start+12] << 8);
+            radarStillEnergy = buf[start+13];
+          }
+        }
+      }
+      bufPos = 0;  // Reset for next frame
+    }
+  }
 }
 #endif
 
