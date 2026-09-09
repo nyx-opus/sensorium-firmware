@@ -342,7 +342,7 @@ void setupSensors() {
   #ifdef ENABLE_RADAR
     // LD2410B on UART at 256000 baud
     #ifndef RADAR_RX_PIN
-      #define RADAR_RX_PIN 44  // D7 on XIAO
+      #define RADAR_RX_PIN 2  // D7 on XIAO
     #endif
     Serial1.begin(256000, SERIAL_8N1, RADAR_RX_PIN, -1);  // RX only, no TX needed
     radarReady = true;
