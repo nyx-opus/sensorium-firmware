@@ -344,7 +344,7 @@ void setupSensors() {
     #ifndef RADAR_RX_PIN
       #define RADAR_RX_PIN 2  // D7 on XIAO
     #endif
-    Serial1.begin(256000, SERIAL_8N1, RADAR_RX_PIN, -1);  // RX only, no TX needed
+    Serial2.begin(256000, SERIAL_8N1, RADAR_RX_PIN, -1);  // RX only, no TX needed
     radarReady = true;
     Serial.println("[sensor] LD2410B radar ready (UART)");
   #endif
@@ -626,8 +626,8 @@ void readRadar() {
   static uint8_t buf[64];
   static uint8_t bufPos = 0;
 
-  while (Serial1.available()) {
-    uint8_t b = Serial1.read();
+  while (Serial2.available()) {
+    uint8_t b = Serial2.read();
     radarTotalBytes++;
     buf[bufPos++] = b;
     if (bufPos >= 64) bufPos = 0;  // overflow protection
