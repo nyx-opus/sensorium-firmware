@@ -158,7 +158,7 @@ const unsigned long SENSOR_INTERVAL_MS = 10000;  // 10 seconds
 #endif
 
 #ifdef ENABLE_RADAR
-  HardwareSerial radarSerial(1);  // UART1
+  HardwareSerial radarSerial(2);  // UART2
   bool radarReady = false;
   bool radarPresence = false;
   uint16_t radarMovingDist = 0;
