@@ -158,7 +158,11 @@ const unsigned long SENSOR_INTERVAL_MS = 10000;  // 10 seconds
 #endif
 
 #ifdef ENABLE_RADAR
-  HardwareSerial radarSerial(2);  // UART2
+  // Using ESP-IDF UART driver directly — Arduino HardwareSerial
+  // fails to receive on remapped pins on ESP32S3
+  #include "driver/uart.h"
+  #include "driver/gpio.h"
+  const uart_port_t RADAR_UART = UART_NUM_1;
   bool radarReady = false;
   bool radarPresence = false;
   uint16_t radarMovingDist = 0;
@@ -339,16 +343,7 @@ void setupSensors() {
     }
   #endif
 
-  #ifdef ENABLE_RADAR
-    // LD2410B on UART at 256000 baud
-    #ifndef RADAR_RX_PIN
-      #define RADAR_RX_PIN 2  // D7 on XIAO
-    #endif
-    radarSerial.setRxBufferSize(1024);
-    radarSerial.begin(256000, SERIAL_8N1, RADAR_RX_PIN, -1);  // RX only
-    radarReady = true;
-    Serial.println("[sensor] LD2410B radar ready (UART)");
-  #endif
+  // Radar init is in setup() before FastLED
 
   #ifdef ENABLE_BATTERY
     pinMode(BATTERY_PIN, INPUT);
@@ -627,8 +622,9 @@ void readRadar() {
   static uint8_t buf[64];
   static uint8_t bufPos = 0;
 
-  while (radarSerial.available()) {
-    uint8_t b = radarSerial.read();
+  uint8_t rxByte;
+  while (uart_read_bytes(RADAR_UART, &rxByte, 1, 0) > 0) {
+    uint8_t b = rxByte;
     radarTotalBytes++;
     buf[bufPos++] = b;
     if (bufPos >= 64) bufPos = 0;  // overflow protection
