@@ -158,7 +158,7 @@ const unsigned long SENSOR_INTERVAL_MS = 10000;  // 10 seconds
 #endif
 
 #ifdef ENABLE_RADAR
-  #include <HardwareSerial.h>
+  HardwareSerial radarSerial(1);  // UART1
   bool radarReady = false;
   bool radarPresence = false;
   uint16_t radarMovingDist = 0;
@@ -344,7 +344,8 @@ void setupSensors() {
     #ifndef RADAR_RX_PIN
       #define RADAR_RX_PIN 2  // D7 on XIAO
     #endif
-    Serial2.begin(115200, SERIAL_8N1, RADAR_RX_PIN, -1);  // RX only, no TX needed
+    radarSerial.setRxBufferSize(1024);
+    radarSerial.begin(256000, SERIAL_8N1, RADAR_RX_PIN, -1);  // RX only
     radarReady = true;
     Serial.println("[sensor] LD2410B radar ready (UART)");
   #endif
@@ -626,8 +627,8 @@ void readRadar() {
   static uint8_t buf[64];
   static uint8_t bufPos = 0;
 
-  while (Serial2.available()) {
-    uint8_t b = Serial2.read();
+  while (radarSerial.available()) {
+    uint8_t b = radarSerial.read();
     radarTotalBytes++;
     buf[bufPos++] = b;
     if (bufPos >= 64) bufPos = 0;  // overflow protection
