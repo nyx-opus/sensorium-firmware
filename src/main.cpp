@@ -343,7 +343,32 @@ void setupSensors() {
     }
   #endif
 
-  // Radar init is in setup() before FastLED
+  #ifdef ENABLE_RADAR
+    #ifndef RADAR_RX_PIN
+      #define RADAR_RX_PIN 44  // D7 on XIAO (GPIO44)
+    #endif
+    // ESP-IDF direct UART config — bypasses Arduino HardwareSerial
+    uart_config_t uart_config = {
+      .baud_rate = 256000,
+      .data_bits = UART_DATA_8_BITS,
+      .parity = UART_PARITY_DISABLE,
+      .stop_bits = UART_STOP_BITS_1,
+      .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+      .rx_flow_ctrl_thresh = 0,
+      .source_clk = UART_SCLK_APB,
+    };
+    esp_err_t err = uart_driver_install(RADAR_UART, 1024, 0, 0, NULL, 0);
+    if (err == ESP_OK) {
+      uart_param_config(RADAR_UART, &uart_config);
+      uart_set_pin(RADAR_UART, UART_PIN_NO_CHANGE, RADAR_RX_PIN,
+                   UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+      radarReady = true;
+      Serial.println("[sensor] LD2410B radar ready (ESP-IDF UART)");
+      Serial.printf("[radar-debug] RX pin: GPIO%d, baud: 256000\n", RADAR_RX_PIN);
+    } else {
+      Serial.printf("[sensor] LD2410B UART init failed: %d\n", err);
+    }
+  #endif
 
   #ifdef ENABLE_BATTERY
     pinMode(BATTERY_PIN, INPUT);
