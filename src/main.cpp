@@ -365,6 +365,8 @@ void setupSensors() {
       radarReady = true;
       Serial.println("[sensor] LD2410B radar ready (ESP-IDF UART)");
       Serial.printf("[radar-debug] RX pin: GPIO%d, baud: 256000\n", RADAR_RX_PIN);
+      // Extra debug: check if UART is actually installed
+      Serial.printf("[radar-debug] UART%d installed, checking...\n", RADAR_UART);
     } else {
       Serial.printf("[sensor] LD2410B UART init failed: %d\n", err);
     }
