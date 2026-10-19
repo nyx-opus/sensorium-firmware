@@ -349,6 +349,7 @@ void setupSensors() {
     #endif
     #ifndef RADAR_TX_PIN
       #define RADAR_TX_PIN 7  // D8 on XIAO (GPIO7) — for enable command
+    #endif
     // ESP-IDF direct UART config — bypasses Arduino HardwareSerial
     uart_config_t uart_config = {
       .baud_rate = 256000,
