@@ -345,7 +345,7 @@ void setupSensors() {
 
   #ifdef ENABLE_RADAR
     #ifndef RADAR_RX_PIN
-      #define RADAR_RX_PIN 4  // D7 on XIAO (GPIO44)
+      #define RADAR_RX_PIN 4  // D3 on XIAO (GPIO4) — Fable diagnosis
     #endif
     // ESP-IDF direct UART config — bypasses Arduino HardwareSerial
     uart_config_t uart_config = {
