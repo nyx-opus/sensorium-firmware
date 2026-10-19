@@ -347,6 +347,8 @@ void setupSensors() {
     #ifndef RADAR_RX_PIN
       #define RADAR_RX_PIN 4  // D3 on XIAO (GPIO4) — Fable diagnosis
     #endif
+    #ifndef RADAR_TX_PIN
+      #define RADAR_TX_PIN 7  // D8 on XIAO (GPIO7) — for enable command
     // ESP-IDF direct UART config — bypasses Arduino HardwareSerial
     uart_config_t uart_config = {
       .baud_rate = 256000,
@@ -360,13 +362,23 @@ void setupSensors() {
     esp_err_t err = uart_driver_install(RADAR_UART, 1024, 0, 0, NULL, 0);
     if (err == ESP_OK) {
       uart_param_config(RADAR_UART, &uart_config);
-      uart_set_pin(RADAR_UART, UART_PIN_NO_CHANGE, RADAR_RX_PIN,
+      uart_set_pin(RADAR_UART, RADAR_TX_PIN, RADAR_RX_PIN,
                    UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
       radarReady = true;
       Serial.println("[sensor] LD2410B radar ready (ESP-IDF UART)");
       Serial.printf("[radar-debug] RX pin: GPIO%d, baud: 256000\n", RADAR_RX_PIN);
       // Extra debug: check if UART is actually installed
       Serial.printf("[radar-debug] UART%d installed, checking...\n", RADAR_UART);
+      // LD2410 needs an enable-config command before it starts UART output
+      delay(100);  // Let radar boot
+      const uint8_t enableCmd[] = {0xFD, 0xFC, 0xFB, 0xFA, 0x04, 0x00, 0xFF, 0x00, 0x01, 0x00, 0x04, 0x03, 0x02, 0x01};
+      uart_write_bytes(RADAR_UART, enableCmd, sizeof(enableCmd));
+      Serial.println("[radar] Sent enable-config command");
+      delay(100);
+      // End config — let radar start reporting
+      const uint8_t endCmd[] = {0xFD, 0xFC, 0xFB, 0xFA, 0x02, 0x00, 0xFE, 0x00, 0x04, 0x03, 0x02, 0x01};
+      uart_write_bytes(RADAR_UART, endCmd, sizeof(endCmd));
+      Serial.println("[radar] Sent end-config, radar should be reporting now");
     } else {
       Serial.printf("[sensor] LD2410B UART init failed: %d\n", err);
     }
